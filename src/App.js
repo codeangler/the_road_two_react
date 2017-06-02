@@ -22,6 +22,7 @@ const list = [
 
 const isSearched = (searchTerm) => (item) => !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
 
+// es6 component digesting state
 class App extends Component {
   constructor(props) {
     super(props);
@@ -65,24 +66,19 @@ class App extends Component {
   }
 }
 
-class Search extends Component {
-  render() {
-    const { value, onChange, children } = this.props;
-    return(
-      <form action="">
-        {children} <input
-          type="text"
-          value={value}
-          onChange={onChange}
-        />
-      </form>
-    );
-  }
-}
+// functional stateless components v1
+const Search = ({value, onChange, children}) =>  // I don't like the style of the implict return and absence of blocks 
+    <form action="">
+      {children} <input
+        type="text"
+        value={value}
+        onChange={onChange}
+      />
+    </form>
 
-class Table extends Component {
-  render() {
-    const { list, pattern, onDismiss } = this.props;
+// functional stateless component v2
+function Table(props) {
+  const { list, pattern, onDismiss } = props;
     return(
       <div>
       {
@@ -104,18 +100,11 @@ class Table extends Component {
           </div>
         )}
       </div>
-    );
-  }
+  );
 }
 
-class Button extends Component {
-  render() {
-    const {
-      onClick,
-      className ='',
-      children,
-    } = this.props;
-
+// functional stateless compenent v3
+const Button = ({onClick, className ='', children}) => {
   return (
     <button
       onClick={onClick}
@@ -124,9 +113,8 @@ class Button extends Component {
     >
       {children}
     </button>
-    )
-  }
-
+  )
 }
+
 
 export default App;
