@@ -85,7 +85,7 @@ class Table extends Component {
     const { list, pattern, onDismiss } = this.props;
     return(
       <div>
-      { 
+      {
         list.filter(isSearched(pattern)).map(item =>
           <div key={item.objectID}>
             <span>
@@ -97,7 +97,7 @@ class Table extends Component {
             <span>
               <Button
                 onClick={() => onDismiss(item.objectID)}
-              > 
+              >
               Dismiss
               </Button>
             </span>
@@ -117,7 +117,7 @@ class Button extends Component {
     } = this.props;
 
   return (
-    <button 
+    <button
       onClick={onClick}
       className={className}
       type="button"
