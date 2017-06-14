@@ -2,29 +2,14 @@ import React, { Component } from 'react';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
+const DEFAULT_PAGE = 0;
+const DEFAULT_HPP = 100;
 
 const PATH_BASE = 'https://hn.algolia.com/api/v1';
 const PATH_SEARCH = '/search';
 const PARAM_SEARCH = 'query=';
-
-const list = [
-  {
-    title: 'React',
-    url: 'https://facebook.github.io/react/',
-    author: 'Jordan Walke',
-    num_comments: 3,
-    points: 4,
-    objectID: 0,
-  },
-  {
-    title: 'Redux',
-    url: 'https://github.com/reactjs/redux',
-    author: 'Dan Abramov, Andrew Clark',
-    num_comments: 2,
-    points: 5,
-    objectID: 1,
-  },
-];
+const PARAM_PAGE = 'page=';
+const PARAM_HPP = 'hitsPerPage=';
 
 const isSearched = (searchTerm) => (item) => !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -40,24 +25,36 @@ class App extends Component {
 
     this.setSearchTopstories = this.setSearchTopstories.bind(this);
     this.fetchSearchTopstories = this.fetchSearchTopstories.bind(this);
-
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
   }
 
   setSearchTopstories(result) {
-    this.setState({ result });
+    const { hits, page } = result;
+    const oldHits = page !== 0
+      ? this.state.result.hits
+      : [];
+
+    const updatedHits = [
+      ...oldHits,
+      ...hits
+    ];
+
+    this.setState({
+      result: { hits: updatedHits, page}
+    });
   }
 
-  fetchSearchTopstories(searchTerm) {
-    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}`)
+  fetchSearchTopstories(searchTerm, page) {
+    fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
       .then(response => response.json())
       .then(result => this.setSearchTopstories(result));
   }
 
   componentDidMount() {
     const {searchTerm} = this.state;
-    this.fetchSearchTopstories(searchTerm);
+    this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
   }
 
   onSearchChange(event) {
@@ -66,13 +63,21 @@ class App extends Component {
 
   onDismiss(id) {
    const isNotId = item => item.objectID !== id;
-   const updatedList = this.state.list.filter(isNotId);
-   this.setState({ list: updatedList});
+   const updatedHits = this.state.result.hits.filter(isNotId);
+   this.setState({
+    result: Object.assign({}, this.state.result, { hits:updatedHits })
+   });
+  }
+
+  onSearchSubmit(event) {
+    const { searchTerm } = this.state;
+    this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
+    event.preventDefault();
   }
 
   render() {
     const {searchTerm, result} = this.state;
-
+    const page = (result && result.page) || 0;
     if (!result) {return null; }
 
     return (
@@ -81,37 +86,52 @@ class App extends Component {
         <Search
           value={searchTerm}
           onChange={this.onSearchChange}
+          onSubmit={this.onSearchSubmit}
         >
         Search
         </Search>
         </div>
-        <Table
-          list={result.hits}
-          pattern={searchTerm}
-          onDismiss={this.onDismiss}
-        />
+        { result
+          ? <Table
+                list={result.hits}
+                onDismiss={this.onDismiss}
+              />
+              : null
+            }
+            <div className="interactions">
+              <Button onClick={() => this.fetchSearchTopstories(searchTerm, page + 1 )}>
+              More
+              </Button>
+            </div>
       </div>
     );
   }
 }
 
 // functional stateless components v1
-const Search = ({value, onChange, children}) =>  // I don't like the style of the implict return and absence of blocks 
-    <form action="">
+const Search = ({
+  value,
+  onChange,
+  onSubmit,
+  children}) =>  // I don't like the style of the implict return and absence of blocks
+    <form onSubmit={onSubmit} action="">
       {children} <input
         type="text"
         value={value}
         onChange={onChange}
       />
+      <button type="submit">
+        {children}
+      </button>
     </form>
 
 // functional stateless component v2
 function Table(props) {
-  const { list, pattern, onDismiss } = props;
+  const { list, onDismiss } = props;
     return(
       <div className="table">
       {
-        list.filter(isSearched(pattern)).map(item =>
+        list.map(item =>
           <div className="table-row" key={item.objectID}>
             <span style={{width:'40%'}}>
               <a href={item.url} target="_blank">{item.title}</a>
